@@ -17,21 +17,21 @@
   - Threading: Permite la creación y gestión de hilos, lo que es útil para manejar varias conexiones al mismo tiempo.
   
 ### Función handle_client:
-
-    def handle_client(client_socket):
-        try:
-            request = client_socket.recv(1024)
-            print(f"Recibido: {request.decode()}")
-            client_socket.send(b"HTTP/1.1 200 OK\n\nHola, cliente!")
-        finally:
-            client_socket.close()
-
-- Entrada de la función: Toma un objeto client_socket que representa la conexión con un cliente.
-
-      1. Request = client_socket.recv(1024): Recibe datos del cliente, leyendo hasta 1024 bytes. Esto puede ser un mensaje HTTP, texto plano, etc.
-      2. Print(f"Recibido: {request.decode()}"): Convierte los datos recibidos (en bytes) a una cadena de texto para su impresión.
-      3. Client_socket.send(b"HTTP/1.1 200 OK\n\nHola, cliente!"): Responde al cliente con un mensaje en formato HTTP indicando éxito (200 OK) y un saludo.
-      4. Client_socket.close(): Libera la conexión con el cliente para ahorrar recursos.
+    
+        def handle_client(client_socket):
+            try:
+                request = client_socket.recv(1024)
+                print(f"Recibido: {request.decode()}")
+                client_socket.send(b"HTTP/1.1 200 OK\n\nHola, cliente!")
+            finally:
+                client_socket.close()
+    
+    - Entrada de la función: Toma un objeto client_socket que representa la conexión con un cliente.
+    
+          1. Request = client_socket.recv(1024): Recibe datos del cliente, leyendo hasta 1024 bytes. Esto puede ser un mensaje HTTP, texto plano, etc.
+          2. Print(f"Recibido: {request.decode()}"): Convierte los datos recibidos (en bytes) a una cadena de texto para su impresión.
+          3. Client_socket.send(b"HTTP/1.1 200 OK\n\nHola, cliente!"): Responde al cliente con un mensaje en formato HTTP indicando éxito (200 OK) y un saludo.
+          4. Client_socket.close(): Libera la conexión con el cliente para ahorrar recursos.
   
 ### Configuración del servidor:
 
