@@ -118,12 +118,15 @@ Este servidor puede aceptar múltiples conexiones simultáneamente gracias a los
 
 ## 2. Servidor con Multiprocesamiento (Multiprocessing)
 
-### Diferencia clave con los hilos
+### Funcionalidad general: 
 
-Este enfoque utiliza procesos, no hilos. A diferencia de los hilos:
+El servidor actúa como un administrador que:
+- Acepta conexiones entrantes de clientes.
+- Delega la gestión de cada cliente a procesos independientes, lo que permite que varios clientes se manejen de forma simultánea y eficiente.
 
-    Cada proceso tiene su propio espacio de memoria, evitando conflictos de acceso a recursos compartidos.
-    Los procesos permiten un paralelismo real, utilizando múltiples núcleos de CPU, ya que no están limitados por el Global Interpreter Lock (GIL) de Python.
+Este proceso asegura que el servidor sea capaz de:
+- Escuchar nuevas conexiones mientras otros clientes están siendo atendidos.
+- Aislar la lógica de cada cliente en un proceso separado, reduciendo el riesgo de interferencia entre clientes.
 
 ### Importaciones
 
@@ -252,3 +255,134 @@ Este enfoque utiliza procesos, no hilos. A diferencia de los hilos:
 
     3. Comunicación más compleja:
     Compartir información entre procesos requiere mecanismos adicionales, como colas o pipes, lo que complica el diseño.
+
+## 3. Servidor con Multiplexación de Entrada/Salida (select)
+
+### Funcionalidad general: 
+
+Este código implementa un servidor TCP no bloqueante que utiliza la función select.select() para manejar múltiples conexiones de clientes simultáneamente, dentro de un solo proceso. La principal característica de este enfoque es la multiplexación de entradas/salidas (E/S), lo que permite al servidor monitorear varios sockets (conexiones de clientes y su propio socket de escucha) de manera eficiente sin necesidad de crear hilos o procesos adicionales.
+
+### Importaciones
+
+    import socket
+    import select
+
+- Socket: Proporciona las herramientas necesarias para crear sockets y establecer comunicaciones en red.
+- Select: Permite supervisar múltiples sockets y determina cuáles están listos para leer, escribir o han encontrado un error, sin necesidad de bloquear el programa.
+
+### Configuración del servidor
+
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.bind(("0.0.0.0", 8080))
+    server.listen(5)
+    sockets = [server]
+    
+    1. Server = socket.socket(socket.AF_INET, socket.SOCK_STREAM):
+        Crea un socket para la comunicación TCP utilizando direcciones IPv4.
+    2. Server.bind(("0.0.0.0", 8080)):
+        Asocia el socket al puerto 8080 en todas las interfaces de red locales (0.0.0.0).
+    3. Server.listen(5):
+        Configura el socket para escuchar conexiones entrantes, permitiendo hasta 5 conexiones en espera.
+    4. Sockets = [server]:
+        Se inicializa una lista para almacenar los sockets activos. Comienza con el socket del servidor.
+
+### Bucle principal
+
+    while True:
+        readable, _, _ = select.select(sockets, [], [])
+        for s in readable:
+            if s is server:
+                client_socket, addr = server.accept()
+                print(f"Conexión desde {addr}")
+                sockets.append(client_socket)
+            else:
+                data = s.recv(1024)
+                if data:
+                    print(f"Recibido: {data.decode()}")
+                    s.send(b"HTTP/1.1 200 OK\n\nHola, cliente!")
+                else:
+                    print("Cliente desconectado")
+                    sockets.remove(s)
+                    s.close()
+    
+    1. While True::
+        Inicia un bucle infinito que mantiene el servidor ejecutándose y gestionando conexiones.
+    
+    2. Readable, _, _ = select.select(sockets, [], []):
+        Usa select.select() para monitorear los sockets en la lista sockets:
+            - Readable: Contiene los sockets listos para leer datos (clientes activos o el servidor listo para aceptar conexiones).
+            - Los otros dos parámetros ([], []) se utilizan para monitorear sockets listos para escribir o errores, que no se manejan en este caso.
+    
+    3. For s in readable::
+        Itera sobre los sockets listos para leer.
+
+### Nuevo cliente
+
+    if s is server:
+        client_socket, addr = server.accept()
+        print(f"Conexión desde {addr}")
+        sockets.append(client_socket)
+    
+    - Si el socket en readable es el servidor (s is server):
+        1. Client_socket, addr = server.accept():
+            Acepta una nueva conexión de un cliente, devolviendo:
+                - client_socket: El socket para comunicarse con el cliente.
+                - addr: Dirección IP y puerto del cliente.
+        2. Sockets.append(client_socket):
+            Agrega el socket del cliente a la lista sockets para monitorearlo en futuros ciclos del bucle.
+
+### Datos de un cliente existente
+    
+    else:
+        data = s.recv(1024)
+        if data:
+            print(f"Recibido: {data.decode()}")
+            s.send(b"HTTP/1.1 200 OK\n\nHola, cliente!")
+        else:
+            print("Cliente desconectado")
+            sockets.remove(s)
+            s.close()
+    
+    - Si el socket no es el servidor, es un cliente existente que ha enviado datos o ha cerrado la conexión:
+        1. Data = s.recv(1024):
+            Intenta leer hasta 1024 bytes de datos del cliente.
+        2. If data::
+            Si se reciben datos:
+                - Imprime el mensaje recibido.
+                - Envía una respuesta en formato HTTP.
+        3. Else::
+            Si no se reciben datos:
+                - Significa que el cliente cerró la conexión.
+                - El socket del cliente se elimina de la lista sockets.
+                - Se cierra el socket para liberar recursos.
+    
+### Definición del proceso que se realiza
+
+    El proceso implementado es el de un servidor no bloqueante con multiplexación de E/S, capaz de manejar múltiples conexiones concurrentes dentro de un único proceso. Este enfoque utiliza select.select() para:
+    
+    - Supervisar el estado de múltiples sockets sin bloquear la ejecución del programa.
+    - Permitir que el servidor responda rápidamente a clientes activos mientras sigue escuchando nuevas conexiones.
+
+### Ventajas de este enfoque
+
+    1. Eficiencia en el manejo de recursos:
+    No se crean hilos o procesos adicionales, reduciendo el consumo de memoria y CPU.
+    
+    2. Escalabilidad para muchas conexiones:
+    Adecuado para aplicaciones con alta concurrencia, donde no todas las conexiones están activas simultáneamente.
+    
+    3. Simplicidad de diseño:
+    No requiere mecanismos complejos de sincronización entre hilos o procesos.
+
+### Desventajas de este enfoque
+
+    1. Complejidad de código:
+    El manejo manual de listas de sockets puede volverse complicado en aplicaciones más grandes.
+    
+    2. No es ideal para tareas intensivas en CPU:
+    Aunque es eficiente para manejar E/S concurrente, este enfoque no aprovecha múltiples núcleos de CPU.
+    
+    3. Limitaciones de select.select():
+    En sistemas con demasiados sockets, el rendimiento puede degradarse, ya que select revisa toda la lista en cada iteración.
+    
+    Alternativas como epoll (en Linux) o kqueue (en macOS/BSD) son más eficientes para muchos sockets.
