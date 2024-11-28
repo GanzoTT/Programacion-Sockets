@@ -1,6 +1,6 @@
 # Programacion-Sockets
 
-## Servidor con Hilos (Threads)
+## 1. Servidor con Hilos (Threads)
 
 ### Funcionalidad general:
 
@@ -116,3 +116,139 @@ Este servidor puede aceptar múltiples conexiones simultáneamente gracias a los
     3. Menor escalabilidad en sistemas de alta concurrencia:
         Para sistemas de alto rendimiento, este enfoque no es óptimo. Alternativas como asynchronous I/O (asyncio) o servidores basados en eventos (ej., Node.js) pueden manejar cientos de miles de           conexiones con menor uso de recursos.
 
+## 2. Servidor con Multiprocesamiento (Multiprocessing)
+
+### Diferencia clave con los hilos
+
+Este enfoque utiliza procesos, no hilos. A diferencia de los hilos:
+
+    Cada proceso tiene su propio espacio de memoria, evitando conflictos de acceso a recursos compartidos.
+    Los procesos permiten un paralelismo real, utilizando múltiples núcleos de CPU, ya que no están limitados por el Global Interpreter Lock (GIL) de Python.
+
+### Importaciones
+
+    import socket
+    import multiprocessing
+
+- Socket: Permite la creación y uso de sockets para la comunicación en red, utilizando el protocolo TCP en este caso.
+- Multiprocessing: Proporciona herramientas para crear y manejar procesos independientes. Es una alternativa a los hilos y permite un verdadero paralelismo aprovechando múltiples núcleos de la CPU.
+
+### Función handle_client
+
+    def handle_client(client_socket):
+        request = client_socket.recv(1024)
+        print(f"Recibido: {request.decode()}")
+        client_socket.send(b"HTTP/1.1 200 OK\n\nHola, cliente!")
+        client_socket.close()
+    
+      1.  Def handle_client(client_socket)::
+            Define la lógica para manejar la conexión con un cliente individual. Recibe como parámetro el socket del cliente.
+    
+      2.  Request = client_socket.recv(1024):
+            Espera datos enviados por el cliente y lee hasta 1024 bytes del mensaje.
+    
+      3.  Print(f"Recibido: {request.decode()}"):
+            Imprime los datos recibidos en la consola, convirtiéndolos de bytes a cadena de texto.
+    
+      4.  Client_socket.send(b"HTTP/1.1 200 OK\n\nHola, cliente!"):
+            Responde al cliente con un mensaje en formato HTTP, indicando éxito (200 OK) y un saludo ("Hola, cliente!").
+    
+      5.  Client_socket.close():
+            Cierra la conexión con el cliente, liberando recursos.
+
+### Configuración del servidor
+
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.bind(("0.0.0.0", 8080))
+    server.listen(5)
+    print("Servidor escuchando en puerto 8080...")
+    
+    1. Server = socket.socket(socket.AF_INET, socket.SOCK_STREAM):
+            Crea un socket que usa:
+                AF_INET: Dirección IPv4.
+                SOCK_STREAM: Protocolo TCP, orientado a conexión.
+    
+    2. Server.bind(("0.0.0.0", 8080)):
+            Asocia el socket al puerto 8080, escuchando conexiones en todas las interfaces de red locales (0.0.0.0).
+    
+    3. Server.listen(5):
+            Configura el socket para aceptar conexiones entrantes, con una cola máxima de 5 conexiones en espera.
+    
+    4. Print("Servidor escuchando en puerto 8080..."):
+            Mensaje informativo indicando que el servidor está listo para recibir clientes.
+
+### Bucle principal
+
+    while True:
+        client_socket, addr = server.accept()
+        print(f"Conexión desde {addr}")
+        client_process = multiprocessing.Process(target=handle_client, args=(client_socket,))
+        client_process.start()
+    
+    1. While True::
+        Inicia un bucle infinito que permite al servidor aceptar conexiones continuamente.
+    
+    2. Client_socket, addr = server.accept():
+            Espera hasta que un cliente se conecte al servidor.
+            Devuelve:
+               - client_socket: El socket que representa la conexión con el cliente.
+               - addr: La dirección IP y el puerto del cliente.
+    
+    3. Print(f"Conexión desde {addr}"):
+            Imprime la dirección y el puerto del cliente conectado.
+    
+    4. Multiprocessing.Process(...):
+            Crea un proceso independiente para manejar la conexión con el cliente.
+            - target=handle_client: Especifica que la función handle_client manejará la conexión.
+            - args=(client_socket,): Pasa el socket del cliente como argumento.
+    
+    5. Client_process.start():
+            Inicia el proceso para que handle_client se ejecute en paralelo con otros procesos y el servidor principal.
+
+### Definición del proceso que realiza el código
+
+    El código implementa un servidor TCP concurrente que utiliza procesos independientes para manejar múltiples conexiones de clientes simultáneamente. A continuación, se describe en detalle el flujo del proceso:
+    
+    1. Inicialización del servidor:
+    Se configura un socket TCP que escucha en el puerto 8080 y espera conexiones entrantes.
+    
+    2. Aceptación de conexiones:
+    El servidor entra en un bucle infinito donde:
+        - Espera que un cliente se conecte.
+        - Establece una conexión con el cliente mediante accept(), lo que genera un socket específico para esa conexión.
+    
+    3. Creación de un proceso independiente:
+    Cada vez que un cliente se conecta, se crea un nuevo proceso utilizando la biblioteca multiprocessing.
+    Este proceso ejecuta la función handle_client, que gestiona la comunicación con ese cliente en particular.
+    
+    4. Manejo de la comunicación con el cliente:
+    El proceso hijo (independiente del servidor principal) realiza las siguientes acciones:
+        - Recibe datos enviados por el cliente.
+        - Imprime los datos recibidos en la consola del servidor.
+        - Envía una respuesta estándar en formato HTTP con el mensaje: "Hola, cliente!".
+        - Cierra la conexión con el cliente para liberar recursos.
+    
+    5. Ciclo continuo:
+    Mientras el servidor principal está activo, sigue esperando nuevas conexiones y creando procesos para manejarlas.
+    
+### Ventajas del manejo con procesos
+
+    1. Paralelismo real:
+    Aprovecha completamente los núcleos de CPU, permitiendo manejar muchas conexiones simultáneamente con buen rendimiento.
+
+    2. Mayor aislamiento:
+    Cada proceso tiene su propia memoria, lo que reduce el riesgo de errores relacionados con la sincronización o condiciones de carrera.
+
+    3. Escalabilidad:
+    Más adecuado que los hilos para sistemas con alta concurrencia y tareas intensivas en CPU.
+
+### Desventajas del manejo con procesos
+
+    1. Mayor consumo de recursos:
+    Crear procesos consume más memoria y tiempo de arranque en comparación con los hilos.
+
+    2. Sobrecarga en sistemas grandes:
+    Manejar miles de procesos puede saturar el sistema operativo.
+
+    3. Comunicación más compleja:
+    Compartir información entre procesos requiere mecanismos adicionales, como colas o pipes, lo que complica el diseño.
