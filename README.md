@@ -35,63 +35,63 @@
   
 ### Configuración del servidor:
 
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind(("0.0.0.0", 8080))
-    server.listen(5)
-    print("Servidor escuchando en puerto 8080...")
-
-1. Socket.socket(socket.AF_INET, socket.SOCK_STREAM):
-
-       Crea un objeto socket.
-       AF_INET: Indica el uso de direcciones IPv4.
-       SOCK_STREAM: Especifica que se utilizará el protocolo TCP (orientado a conexión).
-
-2. Server.bind(("0.0.0.0", 8080)):
-
-       Asocia el socket al puerto 8080 y permite que escuche conexiones en todas las interfaces de red locales (0.0.0.0).
-   
-3. Server.listen(5):
-
-       Configura el socket para aceptar conexiones entrantes.
-       5 define el tamaño máximo de la cola de conexiones en espera.
-
-4. Print("Servidor escuchando en puerto 8080..."): Muestra un mensaje indicando que el servidor está listo para recibir clientes.
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server.bind(("0.0.0.0", 8080))
+        server.listen(5)
+        print("Servidor escuchando en puerto 8080...")
+    
+    1. Socket.socket(socket.AF_INET, socket.SOCK_STREAM):
+    
+           Crea un objeto socket.
+           AF_INET: Indica el uso de direcciones IPv4.
+           SOCK_STREAM: Especifica que se utilizará el protocolo TCP (orientado a conexión).
+    
+    2. Server.bind(("0.0.0.0", 8080)):
+    
+           Asocia el socket al puerto 8080 y permite que escuche conexiones en todas las interfaces de red locales (0.0.0.0).
+       
+    3. Server.listen(5):
+    
+           Configura el socket para aceptar conexiones entrantes.
+           5 define el tamaño máximo de la cola de conexiones en espera.
+    
+    4. Print("Servidor escuchando en puerto 8080..."): Muestra un mensaje indicando que el servidor está listo para recibir clientes.
 
 ### Bucle principal:
 
-    while True:
-        client_socket, addr = server.accept()
-        print(f"Conexión desde {addr}")
-        client_handler = threading.Thread(target=handle_client, args=(client_socket,))
-        client_handler.start()
-
-1. Client_socket, addr = server.accept():
-
-       Espera una conexión entrante.
-       Devuelve el socket para comunicarse con el cliente y la dirección del cliente (addr).
-
-2. Print(f"Conexión desde {addr}"): Muestra la dirección IP y el puerto del cliente que se ha conectado.
-   
-3. Threading.Thread(...):
-
-        Crea un nuevo hilo para manejar al cliente.
-        target=handle_client: Especifica que la función handle_client manejará la conexión.
-        args=(client_socket,): Pasa el socket del cliente como argumento.
-
-4. Client_handler.start(): Inicia el hilo para manejar al cliente.
+        while True:
+            client_socket, addr = server.accept()
+            print(f"Conexión desde {addr}")
+            client_handler = threading.Thread(target=handle_client, args=(client_socket,))
+            client_handler.start()
+    
+    1. Client_socket, addr = server.accept():
+    
+           Espera una conexión entrante.
+           Devuelve el socket para comunicarse con el cliente y la dirección del cliente (addr).
+    
+    2. Print(f"Conexión desde {addr}"): Muestra la dirección IP y el puerto del cliente que se ha conectado.
+       
+    3. Threading.Thread(...):
+    
+            Crea un nuevo hilo para manejar al cliente.
+            target=handle_client: Especifica que la función handle_client manejará la conexión.
+            args=(client_socket,): Pasa el socket del cliente como argumento.
+    
+    4. Client_handler.start(): Inicia el hilo para manejar al cliente.
 
 ### Definición del proceso que realiza el código
 
-El código implementa un servidor concurrente basado en hilos que maneja múltiples conexiones de clientes de manera simultánea. Su flujo general es:
-
-  1. Inicialización del servidor: Se crea un socket para escuchar en un puerto específico.
-  2. Aceptación de conexiones: En un bucle infinito, el servidor espera que los clientes se conecten.
-  3. Manejo de clientes en hilos:
-
-    - Cada cliente se gestiona en un hilo independiente, lo que permite que varios clientes interactúen con el servidor al mismo tiempo.
-    - El servidor recibe datos del cliente, imprime los datos recibidos y envía una respuesta predefinida en formato HTTP.
-
-  4. Finalización: El hilo que maneja a un cliente termina su ejecución después de responder, y el servidor queda listo para atender nuevas conexiones.
+    El código implementa un servidor concurrente basado en hilos que maneja múltiples conexiones de clientes de manera simultánea. Su flujo general es:
+    
+      1. Inicialización del servidor: Se crea un socket para escuchar en un puerto específico.
+      2. Aceptación de conexiones: En un bucle infinito, el servidor espera que los clientes se conecten.
+      3. Manejo de clientes en hilos:
+    
+        - Cada cliente se gestiona en un hilo independiente, lo que permite que varios clientes interactúen con el servidor al mismo tiempo.
+        - El servidor recibe datos del cliente, imprime los datos recibidos y envía una respuesta predefinida en formato HTTP.
+    
+      4. Finalización: El hilo que maneja a un cliente termina su ejecución después de responder, y el servidor queda listo para atender nuevas conexiones.
 
 ### Ventajas de este estilo de programación concurrente
 
@@ -106,7 +106,7 @@ El código implementa un servidor concurrente basado en hilos que maneja múltip
     3. Desempeño aceptable para tareas ligeras:
         Cada hilo maneja una tarea específica, como recibir y responder datos, lo que facilita el desarrollo para aplicaciones con lógica simple.
 
-Desventajas de este estilo de programación concurrente
+### Desventajas de este estilo de programación concurrente
 
     1. Sobrecarga de hilos:
         Creación de hilos: Cada cliente conectado genera un hilo nuevo, lo que aumenta el consumo de recursos del sistema (memoria y CPU). Si hay miles de clientes, el servidor podría colapsar.
