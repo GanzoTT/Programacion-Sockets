@@ -4,9 +4,7 @@
 
 ### Funcionalidad general:
 
-    Este servidor puede aceptar múltiples conexiones simultáneamente gracias a los hilos.
-    Cada cliente conectado recibe una respuesta estándar (HTTP/1.1 200 OK\n\nHola, cliente!).
-    Si un cliente envía datos al servidor, estos se imprimen en la consola del servidor.
+Este servidor puede aceptar múltiples conexiones simultáneamente gracias a los hilos. Cada cliente conectado recibe una respuesta estándar (HTTP/1.1 200 OK\n\nHola, cliente!). Si un cliente envía datos al servidor, estos se imprimen en la consola del servidor.
     
 ### Importaciones:
 
